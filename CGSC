@@ -1,0 +1,121 @@
+import csv
+import math
+from collections import Counter
+import os
+
+SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
+
+INPUT_FILE = os.path.join(SCRIPT_FOLDER, "control.random.csv")
+OUTPUT_FILE = os.path.join(SCRIPT_FOLDER, "control.random.surprisal.csv")
+
+# ---------------------------------------------------------
+# Read the passwords
+# ---------------------------------------------------------
+
+passwords = []
+
+with open(INPUT_FILE, "r", newline="", encoding="utf-8") as file:
+    reader = csv.reader(file)
+
+    for row in reader:
+        if not row:
+            continue
+
+        password = row[0].strip()
+
+        if password:
+            passwords.append(password)
+
+# ---------------------------------------------------------
+# Check that the input is valid
+# ---------------------------------------------------------
+
+if len(passwords) != 10000:
+    raise ValueError(
+        f"Expected 10,000 passwords, but found {len(passwords)}."
+    )
+
+for number, password in enumerate(passwords, start=1):
+    if len(password) != 12:
+        raise ValueError(
+            f"Password {number} has {len(password)} characters "
+            f"instead of 12."
+        )
+
+# ---------------------------------------------------------
+# Determine character frequencies at each position
+# ---------------------------------------------------------
+
+# There will be one Counter for each of the 12 positions.
+position_counts = [Counter() for _ in range(12)]
+
+for password in passwords:
+    for position in range(12):
+        character = password[position]
+        position_counts[position][character] += 1
+
+# ---------------------------------------------------------
+# Convert frequencies into probabilities
+# ---------------------------------------------------------
+
+position_probabilities = []
+
+for position in range(12):
+    probabilities = {}
+
+    for character, count in position_counts[position].items():
+        probabilities[character] = count / len(passwords)
+
+    position_probabilities.append(probabilities)
+
+# ---------------------------------------------------------
+# Calculate Shannon surprisal for every password
+# ---------------------------------------------------------
+
+results = []
+
+for password in passwords:
+
+    total_surprisal = 0.0
+
+    for position in range(12):
+
+        character = password[position]
+
+        probability = position_probabilities[position][character]
+
+        # Shannon surprisal:
+        # I(x) = -log2(P(x))
+        character_surprisal = -math.log2(probability)
+
+        total_surprisal += character_surprisal
+
+    results.append((password, total_surprisal))
+
+# ---------------------------------------------------------
+# Write the results to a new CSV file
+# ---------------------------------------------------------
+
+with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as file:
+
+    writer = csv.writer(file)
+
+    writer.writerow([
+        "Password",
+        "Shannon_Surprisal_Bits"
+    ])
+
+    for password, surprisal in results:
+
+        writer.writerow([
+            password,
+            f"{surprisal:.6f}"
+        ])
+
+# ---------------------------------------------------------
+# Finished
+# ---------------------------------------------------------
+
+print("Analysis complete.")
+print(f"Passwords analyzed: {len(passwords)}")
+print(f"Results saved to: {OUTPUT_FILE}")
