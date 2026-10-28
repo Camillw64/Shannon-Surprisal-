@@ -1,0 +1,30 @@
+import secrets
+import string
+import csv
+
+NUM_PASSWORDS = 20_000
+PASSWORD_LENGTH = 12
+
+# Available character set
+CHARACTERS = (
+    string.ascii_uppercase +
+    string.ascii_lowercase +
+    string.digits +
+    "!@#$%&*-_+="
+)
+
+# Generate passwords 
+passwords = [
+    ''.join(secrets.choice(CHARACTERS) for _ in range(PASSWORD_LENGTH))
+    for _ in range(NUM_PASSWORDS)
+]
+
+# put them on the file 
+with open("control.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+    
+    for password in passwords:
+        writer.writerow([password])
+
+print(f"Generated {NUM_PASSWORDS:,} passwords.")
+print("Saved to control.passwords.csv")
